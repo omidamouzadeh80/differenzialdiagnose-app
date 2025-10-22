@@ -37,8 +37,7 @@ def export_summary_csv(summary: dict) -> bytes:
     for k, v in summary.items():
         v_str = ", ".join(v) if isinstance(v, (list, tuple)) else str(v)
         lines.append(f"{k};{v_str}")
-    return ("
-".join(lines)).encode("utf-8")
+    return ("\n".join(lines)).encode("utf-8")
 
 
 def export_summary_md(summary: dict, recommendations: list) -> bytes:
