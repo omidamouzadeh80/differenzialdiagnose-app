@@ -32,35 +32,39 @@ def bullets(items):
 
 
 def export_summary_csv(summary: dict) -> bytes:
-    # very small hand-made CSV (key;value) for audit/documentation
+    # CSV (key;value), robust gegen Booleans/Listen/None
     lines = ["Feld;Wert"]
     for k, v in summary.items():
-        v_str = ", ".join(v) if isinstance(v, (list, tuple)) else str(v)
+        if isinstance(v, (list, tuple)):
+            v_str = ", ".join(map(str, v))
+        elif isinstance(v, bool):
+            v_str = "Ja" if v else "Nein"
+        else:
+            v_str = "" if v is None else str(v)
         lines.append(f"{k};{v_str}")
     return ("\n".join(lines)).encode("utf-8")
 
 
 def export_summary_md(summary: dict, recommendations: list) -> bytes:
-    buf = io.StringIO()
-    buf.write("# Insomnie – Entscheidungsunterstützung (Zusammenfassung)
-
-")
-    buf.write(f"Zeitpunkt: {datetime.now().isoformat(timespec='seconds')}
-
-")
-    buf.write("## Eingaben
-")
+    # Markdown-Zusammenfassung ohne mehrzeilige Literale – vermeidet Kopierfehler
+    parts = [
+        "# Insomnie – Entscheidungsunterstützung (Zusammenfassung)",
+        f"Zeitpunkt: {datetime.now().isoformat(timespec='seconds')}",
+        "",
+        "## Eingaben",
+    ]
     for k, v in summary.items():
-        v_str = ", ".join(v) if isinstance(v, (list, tuple)) else ("Ja" if v is True else ("Nein" if v is False else str(v)))
-        buf.write(f"- **{k}:** {v_str}
-")
-    buf.write("
-## Empfehlungen (Demo)
-")
+        if isinstance(v, (list, tuple)):
+            v_str = ", ".join(map(str, v)) if v else "—"
+        elif isinstance(v, bool):
+            v_str = "Ja" if v else "Nein"
+        else:
+            v_str = "—" if (v is None or v == "") else str(v)
+        parts.append(f"- **{k}:** {v_str}")
+    parts += ["", "## Empfehlungen (Demo)"]
     for r in recommendations:
-        buf.write(f"- {r}
-")
-    return buf.getvalue().encode("utf-8")
+        parts.append(f"- {r}")
+    return ("\n".join(parts)).encode("utf-8")
 
 
 # ========================= Fig. 1: Akute Insomnie =========================
@@ -322,4 +326,3 @@ else:
 
 st.divider()
 st.caption("Quelle: Heidbreder et al., 2024. Diese App ist ein Prototyp und ersetzt keine klinische Beurteilung.")
-
